@@ -21,5 +21,24 @@ if uploaded:
     buffer = []
     df.info(buf=buffer.append)
     st.text("".join(buffer))
+
+    # -------------------------------
+    # 📊 NEW: Chart section
+    # -------------------------------
+    st.subheader("📈 Chart of Numeric Data")
+
+    # Select only numeric columns
+    numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
+
+    if len(numeric_cols) == 0:
+        st.warning("No numeric columns available to plot.")
+    else:
+        column_to_plot = st.selectbox(
+            "Choose a numeric column to plot:",
+            numeric_cols
+        )
+
+        st.line_chart(df[column_to_plot], height=300)
+
 else:
     st.info("Upload an Excel file to begin.")
