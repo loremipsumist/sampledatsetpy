@@ -1,44 +1,23 @@
 import streamlit as st
 import pandas as pd
 
-st.title("📊 Excel Dataset Summary App")
+st.title(" Simple Excel Chart App")
 
 uploaded = st.file_uploader("Upload an Excel file", type=["xlsx", "xls"])
 
 if uploaded:
     df = pd.read_excel(uploaded)
 
-    st.subheader("Preview of Data")
+    st.write("### Preview")
     st.dataframe(df.head())
 
-    st.subheader("Summary Statistics")
-    st.write(df.describe(include="all"))
+    # numeric columns only
+    num_cols = df.select_dtypes(include=["number"]).columns.tolist()
 
-    st.subheader("Missing Values per Column")
-    st.write(df.isna().sum())
-
-    st.subheader("Column Info")
-    buffer = []
-    df.info(buf=buffer.append)
-    st.text("".join(buffer))
-
-    # -------------------------------
-    # 📊 NEW: Chart section
-    # -------------------------------
-    st.subheader("📈 Chart of Numeric Data")
-
-    # Select only numeric columns
-    numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
-
-    if len(numeric_cols) == 0:
-        st.warning("No numeric columns available to plot.")
+    if len(num_cols) == 0:
+        st.warning("No numeric columns found in this file.")
     else:
-        column_to_plot = st.selectbox(
-            "Choose a numeric column to plot:",
-            numeric_cols
-        )
-
-        st.line_chart(df[column_to_plot], height=300)
-
+        col = st.selectbox("Select a column to plot", num_cols)
+        st.line_chart(df[col])
 else:
     st.info("Upload an Excel file to begin.")
