@@ -1,108 +1,105 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <title>Excel Chart Tool</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <meta charset="UTF-8" />
+  <title>Excel Chart Viewer</title>
 
-    <style>
-        body {
-            font-family: Arial;
-            max-width: 800px;
-            margin: 40px auto;
-        }
-        canvas {
-            margin-top: 30px;
-        }
-    </style>
+  <!-- XLSX library to read Excel files -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- Chart.js for plotting -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; }
+    #chartContainer { width: 80%; margin-top: 40px; }
+  </style>
 </head>
+
 <body>
+  <h2>📊 Excel Chart Viewer (GitHub Pages Compatible)</h2>
 
-<h2>📊 Create a Chart From an Excel File</h2>
+  <input type="file" id="fileInput" accept=".xlsx,.xls" />
+  <br><br>
 
-<p>Upload an Excel (.xlsx) file and choose a column to chart.</p>
+  <label>Select numeric column:</label>
+  <select id="columnSelect"></select>
 
-<input type="file" id="fileInput" accept=".xlsx,.xls">
+  <div id="chartContainer">
+    <canvas id="myChart"></canvas>
+  </div>
 
-<br><br>
-<label>Select numeric column:</label>
-<select id="columnSelect"></select>
+  <script>
+    let sheetData = [];
+    let chart;
 
-<canvas id="chart" width="800" height="400"></canvas>
+    document.getElementById("fileInput").addEventListener("change", handleFile);
 
-<script>
-let dataFrame = [];
-let chart;
+    function handleFile(event) {
+      const file = event.target.files[0];
+      const reader = new FileReader();
 
-// Read Excel on upload
-document.getElementById('fileInput').addEventListener('change', handleFile);
-
-function handleFile(event) {
-    const file = event.target.files[0];
-    const reader = new FileReader();
-
-    reader.onload = function(e) {
+      reader.onload = (e) => {
         const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        dataFrame = XLSX.utils.sheet_to_json(sheet);
+        const workbook = XLSX.read(data, { type: "array" });
 
-        populateColumnSelector();
-    };
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        sheetData = XLSX.utils.sheet_to_json(firstSheet);
 
-    reader.readAsArrayBuffer(file);
-}
+        populateColumnSelect();
+      };
 
-// Fill dropdown with numeric columns
-function populateColumnSelector() {
-    const select = document.getElementById("columnSelect");
-    select.innerHTML = "";
+      reader.readAsArrayBuffer(file);
+    }
 
-    if (dataFrame.length === 0) return;
+    function populateColumnSelect() {
+      const select = document.getElementById("columnSelect");
+      select.innerHTML = "";
 
-    const columns = Object.keys(dataFrame[0]);
+      if (sheetData.length === 0) return;
 
-    columns.forEach(col => {
-        // Check if column has numeric values
-        const isNumeric = dataFrame.some(row => !isNaN(parseFloat(row[col])));
+      const numericCols = Object.keys(sheetData[0]).filter(col =>
+        typeof sheetData[0][col] === "number"
+      );
 
-        if (isNumeric) {
-            const option = document.createElement("option");
-            option.value = col;
-            option.textContent = col;
-            select.appendChild(option);
-        }
-    });
+      if (numericCols.length === 0) {
+        alert("No numeric columns found in this Excel file.");
+        return;
+      }
 
-    select.addEventListener("change", drawChart);
-}
+      numericCols.forEach(col => {
+        const option = document.createElement("option");
+        option.value = col;
+        option.textContent = col;
+        select.appendChild(option);
+      });
 
-// Draw chart using Chart.js
-function drawChart() {
-    const col = document.getElementById("columnSelect").value;
+      select.onchange = drawChart;
+      drawChart();
+    }
 
-    const labels = dataFrame.map((_, i) => i + 1);
-    const values = dataFrame.map(row => parseFloat(row[col]) || 0);
+    function drawChart() {
+      const col = document.getElementById("columnSelect").value;
+      const labels = sheetData.map((_, i) => i + 1);
+      const values = sheetData.map(row => row[col]);
 
-    if (chart) chart.destroy();
+      if (chart) chart.destroy();
 
-    const ctx = document.getElementById("chart").getContext("2d");
-
-    chart = new Chart(ctx, {
-        type: 'line',
+      const ctx = document.getElementById("myChart").getContext("2d");
+      chart = new Chart(ctx, {
+        type: "line",
         data: {
-            labels: labels,
-            datasets: [{
-                label: col,
-                data: values,
-                borderWidth: 2
-            }]
-        }
-    });
-}
-</script>
-
+          labels: labels,
+          datasets: [{
+            label: col,
+            data: values,
+            borderWidth: 2,
+          }],
+        },
+      });
+    }
+  </script>
 </body>
 </html>
+
 
